@@ -6,5 +6,6 @@ export const updateUser = async (id, data) => {
   const res = await axios.put(`${API_BASE}/users/${id}`, data, {
     headers: { "Content-Type": "application/json" },
   });
+  console.log(res.data);
   return res.data;
 };

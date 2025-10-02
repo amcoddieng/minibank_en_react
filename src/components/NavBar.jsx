@@ -7,6 +7,7 @@ export default function NavBar({ profile, handleOpenProfileModal, stats }) {
 
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
+
   const handleLogout = () => {
     console.log("Déconnexion");
     handleClose();
@@ -14,21 +15,13 @@ export default function NavBar({ profile, handleOpenProfileModal, stats }) {
 
   return (
     <Box sx={{ width: "100%", bgcolor: "background.paper", p: 3, borderBottom: "1px solid", borderColor: "divider" }}>
-      {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
-        <Typography variant="h5" fontWeight="bold">Dashboard de l'agent</Typography>
+        <Typography variant="h5" fontWeight="bold">Dashboard</Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar
-            alt="Profile"
-            src="w.jpg"
-            sx={{
-              width: 45,
-              height: 45,
-              border: "2px solid",
-              borderColor: "primary.main",
-              animation: "spin 5s linear infinite",
-              "@keyframes spin": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
-            }}
+          <Avatar 
+            alt="Profile" 
+            src={profile.photo ? profile.photo : "/w.jpg"} 
+            sx={{ width: 45, height: 45, border: "2px solid", borderColor: "primary.main" }}
           />
           <Button variant="contained" color="primary" onClick={handleClick}>
             {profile.nom} {profile.prenom}
@@ -40,11 +33,10 @@ export default function NavBar({ profile, handleOpenProfileModal, stats }) {
         </Box>
       </Box>
 
-      {/* Statistiques */}
       <Grid container spacing={3} justifyContent="center">
         {stats && Object.keys(stats).length > 0 ? (
-          Object.entries(stats).slice(0, 3).map(([key, value]) => (
-            <Grid item xs={12} sm={4} key={key}>
+          Object.entries(stats).map(([key, value]) => (
+            <Grid item xs={12} sm={3} key={key}>
               <Paper
                 elevation={3}
                 sx={{
