@@ -33,8 +33,16 @@ export default function ProfileModal({ open, onClose, profile, setProfile, liste
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        setError("Seules les images sont autorisées.");
+        e.target.value = null; // reset input
+        setPhotoFile(null);
+        setPreview(profile.photo || "");
+        return;
+      }
+      setError("");
       setPhotoFile(file);
-      setForm(prev => ({ ...prev, photo: file.name })); 
+      setForm(prev => ({ ...prev, photo: file.name }));
       setPreview(URL.createObjectURL(file));
     }
   };
@@ -47,11 +55,15 @@ export default function ProfileModal({ open, onClose, profile, setProfile, liste
 
     setLoading(true);
     try {
-      const data = await updateUser(profile._id, form);
+      const formData = new FormData();
+      formData.append("nom", form.nom);
+      formData.append("prenom", form.prenom);
+      formData.append("email", form.email);
+      if (photoFile) formData.append("photo", photoFile);
+
+      const data = await updateUser(profile._id, formData);
       if (data && data.user) {
-        // Mise à jour côté Navbar
         setProfile(prev => ({ ...prev, ...data.user }));
-        // Mise à jour côté UserTable
         setListe(prev => prev.map(u => u._id === profile._id ? { ...u, ...data.user } : u));
         onClose();
       } else {
@@ -67,37 +79,14 @@ export default function ProfileModal({ open, onClose, profile, setProfile, liste
 
   return (
     <Modal open={open} onClose={onClose}>
-      <Box
-        sx={{ width: 400, bgcolor: "background.paper", p: 3, mx: "auto", mt: 10, borderRadius: 2 }}
-      >
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Modifier le profil
-        </Typography>
+      <Box sx={{ width: 400, bgcolor: "background.paper", p: 3, mx: "auto", mt: 10, borderRadius: 2 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>Modifier le profil</Typography>
 
-        <TextField
-          label="Nom"
-          name="nom"
-          value={form.nom}
-          onChange={handleChange}
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="Prénom"
-          name="prenom"
-          value={form.prenom}
-          onChange={handleChange}
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="Email"
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          fullWidth
-          margin="normal"
-        />
+        {error && <Typography sx={{ color: "red", mb: 1 }}>{error}</Typography>}
+
+        <TextField label="Nom" name="nom" value={form.nom} onChange={handleChange} fullWidth margin="normal" />
+        <TextField label="Prénom" name="prenom" value={form.prenom} onChange={handleChange} fullWidth margin="normal" />
+        <TextField label="Email" name="email" value={form.email} onChange={handleChange} fullWidth margin="normal" />
 
         <Box sx={{ mt: 2, mb: 2 }}>
           {preview && (
@@ -110,12 +99,8 @@ export default function ProfileModal({ open, onClose, profile, setProfile, liste
           <input type="file" accept="image/*" onChange={handlePhotoChange} />
         </Box>
 
-        {error && <Typography sx={{ color: "red", mt: 1 }}>{error}</Typography>}
-
         <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
-          <Button variant="outlined" onClick={onClose} disabled={loading}>
-            Annuler
-          </Button>
+          <Button variant="outlined" onClick={onClose} disabled={loading}>Annuler</Button>
           <Button variant="contained" onClick={handleSubmit} disabled={loading}>
             {loading ? "Sauvegarde..." : "Sauvegarder"}
           </Button>

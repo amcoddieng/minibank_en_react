@@ -1,28 +1,39 @@
 import React, { useState } from "react";
 import { Box, Typography, Avatar, Button, Menu, MenuItem, Grid, Paper } from "@mui/material";
+import { removeToken } from "./api/api_lofin";
+import { useNavigate } from "react-router-dom";
 
 export default function NavBar({ profile, handleOpenProfileModal, stats }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
+  const navigate = useNavigate();
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
 
   const handleLogout = () => {
-    console.log("Déconnexion");
-    handleClose();
+    removeToken();         // supprime le token du localStorage
+    navigate("/");  
   };
-
+console.log("profile.photo ===>", profile?.photo);
   return (
     <Box sx={{ width: "100%", bgcolor: "background.paper", p: 3, borderBottom: "1px solid", borderColor: "divider" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
         <Typography variant="h5" fontWeight="bold">Dashboard</Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar 
-            alt="Profile" 
-            src={profile.photo ? profile.photo : "/w.jpg"} 
-            sx={{ width: 45, height: 45, border: "2px solid", borderColor: "primary.main" }}
-          />
+<Avatar
+  alt="Profile"
+// Remplace le src de l'Avatar par ça :
+src={
+  profile?.photo
+    ? (profile.photo.startsWith('http') ? profile.photo : `http://localhost:3000${profile.photo}`)
+    : "/w.jpg"
+}
+  sx={{ width: 45, height: 45, border: "2px solid", borderColor: "primary.main" }}
+/>
+
+
+
           <Button variant="contained" color="primary" onClick={handleClick}>
             {profile.nom} {profile.prenom}
           </Button>

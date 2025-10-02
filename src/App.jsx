@@ -63,6 +63,7 @@ export default function App() {
     setStat(statsCalc);
   }, [liste]);
 
+    {console.log(profile)}
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

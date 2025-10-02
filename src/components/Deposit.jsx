@@ -1,34 +1,15 @@
-// import React, { useState } from "react";
-// import { Box, TextField, Button } from "@mui/material";
-
-// export default function Deposit({ liste, setListe }) {
-//   const [numero, setNumero] = useState("");
-//   const [montant, setMontant] = useState("");
-
-//   const handleDeposit = () => {
-//     const index = liste.findIndex((u) => u.numero === numero);
-//     if (index !== -1) {
-//       const newList = [...liste];
-//       newList[index].solde = Number(newList[index].solde) + Number(montant);
-//       setListe(newList);
-//       alert(`Dépôt de ${montant} effectué pour ${newList[index].prenom} ${newList[index].nom}`);
-//     } else {
-//       alert("Utilisateur introuvable !");
-//     }
-//   };
-
-//   return (
-//     <Box sx={{ mt: 2, p: 2 }}>
-//       <TextField label="Numéro utilisateur" value={numero} onChange={(e) => setNumero(e.target.value)} fullWidth margin="normal" />
-//       <TextField label="Montant" type="number" value={montant} onChange={(e) => setMontant(e.target.value)} fullWidth margin="normal" />
-//       <Button variant="contained" onClick={handleDeposit}>
-//         Valider le dépôt
-//       </Button>
-//     </Box>
-//   );
-// }
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from "@mui/material";
 import { makeDepot } from "./api/api_depot";
 import { getId } from "./api/api_lofin";
 
@@ -37,28 +18,47 @@ export default function Deposit() {
   const [montant, setMontant] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const idCompteSource = getId(); // id de l'admin qui fait le depot
+  const [open, setOpen] = useState(false); // état modal
+  const idCompteSource = getId(); // id de l'admin qui fait le dépôt
 
-  const handleDeposit = async () => {
-    setMessage("");
+  const handleOpen = () => {
     setError("");
-
     if (!compteDestinataire || !montant) {
       setError("Veuillez remplir tous les champs.");
       return;
     }
-    if (Number(montant) <= 0) {
+    const montantNumber = Number(montant);
+    if (montantNumber <= 0) {
       setError("Le montant doit être supérieur à zéro.");
       return;
     }
+    if (montantNumber < 5000) {
+      setError("Le montant minimum pour un dépôt est de 5000 f.");
+      return;
+    }
+    setOpen(true);
+  };
 
+  const handleClose = () => setOpen(false);
+
+  const handleConfirm = async () => {
     try {
-      const res = await makeDepot({ compteDestinataire, montant: Number(montant), idCompteSource });
-      setMessage(`Dépôt effectué avec succès : montant ${res.montantTransfere} €, frais ${res.frais} €, débité ${res.montantDebite} €`);
+      setMessage("");
+      setError("");
+      const res = await makeDepot({
+        compteDestinataire,
+        montant: Number(montant),
+        idCompteSource,
+      });
+      setMessage(
+        `Dépôt effectué avec succès : montant ${res.montantTransfere} FCFA, frais ${res.frais} FCFA, débité ${res.montantDebite} FCFA`
+      );
       setCompteDestinataire("");
       setMontant("");
     } catch (err) {
       setError(err.response?.data?.error || "Erreur lors du dépôt");
+    } finally {
+      setOpen(false);
     }
   };
 
@@ -81,15 +81,28 @@ export default function Deposit() {
       />
       {error && <Typography color="error" sx={{ mt: 1 }}>{error}</Typography>}
       {message && <Typography color="primary" sx={{ mt: 1 }}>{message}</Typography>}
-      <Button variant="contained" onClick={handleDeposit} sx={{ mt: 2 }}>
+
+      <Button variant="contained" onClick={handleOpen} sx={{ mt: 2 }} fullWidth>
         Valider le dépôt
       </Button>
+
+      {/* Modal de confirmation */}
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>Confirmation du dépôt</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Voulez-vous vraiment déposer <strong>{montant} FCFA</strong> sur le compte <strong>{compteDestinataire}</strong> ?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} color="inherit">
+            Annuler
+          </Button>
+          <Button onClick={handleConfirm} variant="contained">
+            Confirmer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
-
-
-
-
-
-

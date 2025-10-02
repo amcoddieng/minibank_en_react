@@ -16,11 +16,17 @@ import {
   MenuItem,
   InputLabel,
   FormControl,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import UserModal from "./UserModal";
 import { deleteUsers } from "./api/api_deleteuser";
+import { blockUsers } from "./api/api_blockusers";
 
 export default function UserTable({ liste, setListe }) {
   const [openModal, setOpenModal] = useState(false);
@@ -35,12 +41,19 @@ export default function UserTable({ liste, setListe }) {
   const [minSolde, setMinSolde] = useState("");
   const [maxSolde, setMaxSolde] = useState("");
 
+  // modal confirmation
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
+
+  // Modal utilisateur
   const handleOpenModal = (index = null) => {
     setEditIndex(index);
     setOpenModal(true);
   };
   const handleCloseModal = () => setOpenModal(false);
 
+  // Sélection
   const toggleSelect = (id) => {
     const next = new Set(selectedIds);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -53,10 +66,21 @@ export default function UserTable({ liste, setListe }) {
     setSelectedIds(next);
   };
 
+  // Ouvrir la modal de confirmation
+  const openConfirmModal = (message, action) => {
+    setConfirmMessage(message);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
+  };
+  const handleConfirmClose = () => setConfirmOpen(false);
+  const handleConfirm = async () => {
+    if (confirmAction) await confirmAction();
+    setConfirmOpen(false);
+  };
+
+  // Suppression
   const handleDelete = async (ids) => {
     if (!ids.length) return;
-    if (!window.confirm(`Voulez-vous supprimer ${ids.length} utilisateur(s) ?`)) return;
-
     try {
       await deleteUsers(ids);
       setListe((prev) => prev.filter((u) => !ids.includes(u._id)));
@@ -69,24 +93,46 @@ export default function UserTable({ liste, setListe }) {
     }
   };
 
+  // Blocage / Déblocage
+  const handleBlock = async (block) => {
+    if (!selectedIds.size) return;
+    try {
+      await blockUsers({ ids: Array.from(selectedIds), block });
+      setListe((prev) =>
+        prev.map((u) => (selectedIds.has(u._id) ? { ...u, block } : u))
+      );
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors du blocage/déblocage");
+    }
+  };
+
   // Filtrage multi-critères
   const filteredListe = liste.filter((item) => {
     const textMatch =
       item.nom?.toLowerCase().includes(searchText.toLowerCase()) ||
       item.prenom?.toLowerCase().includes(searchText.toLowerCase()) ||
       item.email?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.compte?.numeroCompte?.includes(searchText); // numéro de compte inclus
+      item.compte?.numeroCompte?.includes(searchText);
     const roleMatch = filterRole ? item.role === filterRole : true;
-    const minMatch = minSolde ? (item.compte?.solde || 0) >= parseFloat(minSolde) : true;
-    const maxMatch = maxSolde ? (item.compte?.solde || 0) <= parseFloat(maxSolde) : true;
+    const minMatch = minSolde
+      ? (item.compte?.solde || 0) >= parseFloat(minSolde)
+      : true;
+    const maxMatch = maxSolde
+      ? (item.compte?.solde || 0) <= parseFloat(maxSolde)
+      : true;
     return textMatch && roleMatch && minMatch && maxMatch;
   });
 
-  const visibleRows = filteredListe.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const visibleRows = filteredListe.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
   const allVisibleSelected = visibleRows.every((r) => selectedIds.has(r._id));
 
   return (
-    <Box sx={{ mt: 2 }}>
+    <Box sx={{ mt: 2, width: "100%" }}>
       {/* Filtres */}
       <Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap" }}>
         <TextField
@@ -144,17 +190,53 @@ export default function UserTable({ liste, setListe }) {
         <Button variant="contained" color="primary" onClick={() => handleOpenModal()}>
           Ajouter
         </Button>
-        <Button
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteIcon />}
-          onClick={() => handleDelete(Array.from(selectedIds))}
-          disabled={selectedIds.size === 0}
-        >
-          Supprimer sélection ({selectedIds.size})
-        </Button>
+        <Box>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() =>
+              openConfirmModal(
+                `Voulez-vous supprimer ${selectedIds.size} utilisateur(s) ?`,
+                () => handleDelete(Array.from(selectedIds))
+              )
+            }
+            disabled={selectedIds.size === 0}
+            sx={{ mr: 1 }}
+          >
+            Supprimer ({selectedIds.size})
+          </Button>
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={() =>
+              openConfirmModal(
+                `Voulez-vous bloquer ${selectedIds.size} utilisateur(s) ?`,
+                () => handleBlock(true)
+              )
+            }
+            disabled={selectedIds.size === 0}
+            sx={{ mr: 1 }}
+          >
+            Bloquer
+          </Button>
+          <Button
+            variant="outlined"
+            color="success"
+            onClick={() =>
+              openConfirmModal(
+                `Voulez-vous débloquer ${selectedIds.size} utilisateur(s) ?`,
+                () => handleBlock(false)
+              )
+            }
+            disabled={selectedIds.size === 0}
+          >
+            Débloquer
+          </Button>
+        </Box>
       </Box>
 
+      {/* Table */}
       <Table>
         <TableHead>
           <TableRow>
@@ -172,12 +254,13 @@ export default function UserTable({ liste, setListe }) {
             <TableCell>Adresse</TableCell>
             <TableCell>Email</TableCell>
             <TableCell>Role</TableCell>
+            <TableCell>Statut</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {visibleRows.map((item, idx) => (
-            <TableRow key={item._id}>
+            <TableRow key={item._id} sx={{ bgcolor: item.block ? "#fdd" : "inherit" }}>
               <TableCell padding="checkbox">
                 <Checkbox
                   checked={selectedIds.has(item._id)}
@@ -192,6 +275,7 @@ export default function UserTable({ liste, setListe }) {
               <TableCell>{item.adresse || "-"}</TableCell>
               <TableCell>{item.email}</TableCell>
               <TableCell>{item.role || "-"}</TableCell>
+              <TableCell>{item.block ? "Bloqué" : "Actif"}</TableCell>
               <TableCell>
                 <Tooltip title="Modifier">
                   <IconButton onClick={() => handleOpenModal(page * rowsPerPage + idx)}>
@@ -199,7 +283,12 @@ export default function UserTable({ liste, setListe }) {
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Supprimer">
-                  <IconButton onClick={() => handleDelete([item._id])}>
+                  <IconButton onClick={() =>
+                    openConfirmModal(
+                      `Voulez-vous supprimer cet utilisateur ?`,
+                      () => handleDelete([item._id])
+                    )
+                  }>
                     <DeleteIcon />
                   </IconButton>
                 </Tooltip>
@@ -218,7 +307,25 @@ export default function UserTable({ liste, setListe }) {
         rowsPerPageOptions={[rowsPerPage]}
       />
 
-      <UserModal open={openModal} onClose={handleCloseModal} editIndex={editIndex} liste={liste} setListe={setListe} />
+      {/* Modals */}
+      <UserModal
+        open={openModal}
+        onClose={handleCloseModal}
+        editIndex={editIndex}
+        liste={liste}
+        setListe={setListe}
+      />
+
+      <Dialog open={confirmOpen} onClose={handleConfirmClose}>
+        <DialogTitle>Confirmation</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{confirmMessage}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmClose} color="inherit">Annuler</Button>
+          <Button onClick={handleConfirm} color="error" variant="contained">Confirmer</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
