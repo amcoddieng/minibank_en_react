@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { removeToken } from "../api/api_lofin";
 import { useNavigate } from "react-router-dom";
 
-export default function AutoLogout({ children, timeout =   10 * 5 * 1000 }) { // 5 minutes
+export default function AutoLogout({ children, timeout =   100 * 5 * 1000 }) { // 5 minutes
   const navigate = useNavigate();
 
   useEffect(() => {
