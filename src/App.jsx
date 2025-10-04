@@ -20,6 +20,8 @@ export default function App() {
   const [editIndex, setEditIndex] = useState(null);
 
   const [loading, setLoading] = useState(true);
+  // photo est une data qui provient de l'api
+
   const [profile, setProfile] = useState({ _id: "", nom: "", prenom: "", email: "", photo: "" });
 
   useEffect(() => {

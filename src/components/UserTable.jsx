@@ -27,6 +27,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import UserModal from "./UserModal";
 import { deleteUsers } from "./api/api_deleteuser";
 import { blockUsers } from "./api/api_blockusers";
+import { getId } from "./api/api_lofin"; // ✅ récupération de l’ID user connecté
 
 export default function UserTable({ liste, setListe }) {
   const [openModal, setOpenModal] = useState(false);
@@ -45,6 +46,9 @@ export default function UserTable({ liste, setListe }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [confirmAction, setConfirmAction] = useState(null);
+
+  // ✅ ID du user connecté
+  const currentUserId = getId();
 
   // Modal utilisateur
   const handleOpenModal = (index = null) => {
@@ -108,22 +112,26 @@ export default function UserTable({ liste, setListe }) {
     }
   };
 
-  // Filtrage multi-critères
-  const filteredListe = liste.filter((item) => {
-    const textMatch =
-      item.nom?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.prenom?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.email?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.compte?.numeroCompte?.includes(searchText);
-    const roleMatch = filterRole ? item.role === filterRole : true;
-    const minMatch = minSolde
-      ? (item.compte?.solde || 0) >= parseFloat(minSolde)
-      : true;
-    const maxMatch = maxSolde
-      ? (item.compte?.solde || 0) <= parseFloat(maxSolde)
-      : true;
-    return textMatch && roleMatch && minMatch && maxMatch;
-  });
+  // Filtrage multi-critères + exclusion du user connecté
+  const filteredListe = liste
+    .filter((item) => item._id !== currentUserId) // 🚀 exclusion
+    .filter((item) => {
+      const textMatch =
+        item.nom?.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.prenom?.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.email?.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.compte?.numeroCompte?.includes(searchText);
+
+      const roleMatch = filterRole ? item.role === filterRole : true;
+      const minMatch = minSolde
+        ? (item.compte?.solde || 0) >= parseFloat(minSolde)
+        : true;
+      const maxMatch = maxSolde
+        ? (item.compte?.solde || 0) <= parseFloat(maxSolde)
+        : true;
+
+      return textMatch && roleMatch && minMatch && maxMatch;
+    });
 
   const visibleRows = filteredListe.slice(
     page * rowsPerPage,
@@ -283,12 +291,14 @@ export default function UserTable({ liste, setListe }) {
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Supprimer">
-                  <IconButton onClick={() =>
-                    openConfirmModal(
-                      `Voulez-vous supprimer cet utilisateur ?`,
-                      () => handleDelete([item._id])
-                    )
-                  }>
+                  <IconButton
+                    onClick={() =>
+                      openConfirmModal(
+                        `Voulez-vous supprimer cet utilisateur ?`,
+                        () => handleDelete([item._id])
+                      )
+                    }
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </Tooltip>
@@ -322,8 +332,12 @@ export default function UserTable({ liste, setListe }) {
           <DialogContentText>{confirmMessage}</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleConfirmClose} color="inherit">Annuler</Button>
-          <Button onClick={handleConfirm} color="error" variant="contained">Confirmer</Button>
+          <Button onClick={handleConfirmClose} color="inherit">
+            Annuler
+          </Button>
+          <Button onClick={handleConfirm} color="error" variant="contained">
+            Confirmer
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

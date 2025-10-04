@@ -21,9 +21,7 @@ console.log("profile.photo ===>", profile?.photo);
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
         <Typography variant="h5" fontWeight="bold">Dashboard</Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar alt="Profile" src={profile?.photo ? `http://localhost:3000/${profile.photo}` : "/user.png"} />  
-
-
+          <Avatar alt="Profile" src={`http://localhost:3000${profile.photo}`} />
           <Button variant="contained" color="primary" onClick={handleClick}>
             {profile.nom} {profile.prenom}
           </Button>
