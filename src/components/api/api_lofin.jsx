@@ -3,7 +3,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
 
-const API_BASE = "http://localhost:3000/api";
+const API_BASE = "https://api-mini-bank.onrender.com/api";
 
 export const loginUser = async (email, password) => {
   try {

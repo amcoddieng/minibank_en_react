@@ -14,7 +14,7 @@ import axios from "axios";
 // import axios from "axios";
 
 export const createUser = async (formData) => {
-  const res = await axios.post("http://localhost:3000/api/user", formData, {
+  const res = await axios.post("https://api-mini-bank.onrender.com/api/user", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data;

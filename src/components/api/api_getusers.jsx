@@ -2,7 +2,7 @@ import axios from "axios";
 
 export const api_getusers = async () => {
     try {
-        const response = await axios.get("http://localhost:3000/api/users");
+        const response = await axios.get("https://api-mini-bank.onrender.com/api/users");
         return response.data
     } catch (error) {
         throw error

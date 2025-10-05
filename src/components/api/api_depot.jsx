@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "./api_lofin";
 
-const API_BASE = "http://localhost:3000/api";
+const API_BASE = "https://api-mini-bank.onrender.com/api";
 
 export const makeDepot = async ({ compteDestinataire, montant, idCompteSource }) => {
   const token = getToken();
