@@ -11,7 +11,7 @@ import {
   DialogContentText,
   DialogActions,
 } from "@mui/material";
-import { cancelTransaction } from "./api/cancelTransaction";
+import { cancelTransaction } from "./api/canceltransaction";
 
 export default function CancelTransaction() {
   const [idTransaction, setIdTransaction] = useState("");
