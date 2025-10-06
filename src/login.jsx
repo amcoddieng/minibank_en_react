@@ -45,6 +45,7 @@ export default function Login() {
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "#f0f2f5",
+        width:"100vw",
       }}
     >
       <Paper
